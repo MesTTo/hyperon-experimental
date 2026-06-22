@@ -221,8 +221,11 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 /// Global variable id counter to provide unique variable id values.
 static NEXT_VARIABLE_ID: AtomicUsize = AtomicUsize::new(1);
 
-/// Returns next unique variable id and increments the global counter.
-fn next_variable_id() -> usize {
+/// Returns next unique variable id and increments the global counter. Public so an
+/// external matcher backend (e.g. a MORK-backed `Space`) can mint the same globally
+/// unique ids the built-in matcher uses, keeping variables from distinct query results
+/// from aliasing when the interpreter threads their bindings across evaluation steps.
+pub fn next_variable_id() -> usize {
     NEXT_VARIABLE_ID.fetch_add(1, Ordering::Relaxed)
 }
 
