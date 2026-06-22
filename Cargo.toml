@@ -5,6 +5,7 @@ members = [
     "hyperon-space",
     "hyperon-macros",
     "lib",
+    "mork-demo",
     "c",
     "repl",
 ]
