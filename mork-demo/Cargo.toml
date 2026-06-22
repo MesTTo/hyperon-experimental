@@ -9,3 +9,4 @@ hyperon = { workspace = true }
 hyperon-atom = { workspace = true }
 hyperon-space = { workspace = true }
 metta-on-mork = { path = "../../metta-on-mork" }
+regex = "1"
