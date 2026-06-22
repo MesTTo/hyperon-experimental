@@ -56,6 +56,15 @@ impl Grounded for StateAtom {
     fn type_(&self) -> Atom {
         self.state.borrow().1.clone()
     }
+
+    /// A `State` wraps an `Rc<RefCell>` whose contents `change-state!` mutates in place,
+    /// so its display changes over time and two cells holding equal values are still
+    /// distinct objects. It is not content-addressable: a content-keyed store (e.g. the
+    /// MORK byte trie) must address it by stable identity and re-read its live value
+    /// when matching. See [`Grounded::is_mutable`].
+    fn is_mutable(&self) -> bool {
+        true
+    }
 }
 
 fn new_state(args: &[Atom]) -> Result<Vec<Atom>, ExecError> {

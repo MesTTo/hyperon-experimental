@@ -511,6 +511,18 @@ pub trait Grounded : Display {
     fn serialize(&self, _serializer: &mut dyn serial::Serializer) -> serial::Result {
         Err(serial::Error::NotSupported)
     }
+
+    /// Whether the grounded atom's observable content can change after creation,
+    /// so that two atoms equal now may differ later (e.g. a `State` cell wrapping
+    /// a mutable value). Such an atom is *not* content-addressable: a content key
+    /// taken at one moment goes stale on mutation, and two distinct cells holding
+    /// equal values are different objects despite comparing equal. Backends that
+    /// store atoms by content (a trie, a hash index) must address a mutable atom by
+    /// stable identity instead and re-read its live value when matching. Defaults to
+    /// `false` (immutable, content-addressable); a mutable cell type overrides it.
+    fn is_mutable(&self) -> bool {
+        false
+    }
 }
 
 /// Boxed iterator type to simplify type annotations
