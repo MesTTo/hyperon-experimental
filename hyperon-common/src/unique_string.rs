@@ -5,9 +5,21 @@ use std::hash::{Hash, Hasher};
 use std::sync::{Mutex, LazyLock};
 use crate::immutable_string::ImmutableString;
 
-static UNIQUE_STRINGS: LazyLock<Mutex<UniqueStringStorage>> = LazyLock::new(|| {
-    Mutex::new(UniqueStringStorage::new())
-});
+/// The global string interner is sharded by string-hash so concurrent interning
+/// (every `Atom::sym` create and drop) does not serialize on one mutex. A single
+/// mutex here was the dominant contention in parallel querying (profiled at ~13%
+/// `lock_contended` across 8 threads in the metta-on-mork backend). The stored
+/// `u64` is the string's hash, so a string maps to the same shard on insert and
+/// on drop. `INTERN_SHARDS` is a power of two so the index is a mask.
+const INTERN_SHARDS: usize = 64;
+
+static UNIQUE_STRINGS: LazyLock<[Mutex<UniqueStringStorage>; INTERN_SHARDS]> =
+    LazyLock::new(|| std::array::from_fn(|_| Mutex::new(UniqueStringStorage::new())));
+
+#[inline]
+fn intern_shard(h: u64) -> usize {
+    (h as usize) & (INTERN_SHARDS - 1)
+}
 
 struct UniqueStringStorage {
     strings: HashMap<Arc<ImmutableString>, u64>,
@@ -55,7 +67,8 @@ impl UniqueString {
 
     #[inline]
     fn new_store(value: ImmutableString) -> Self {
-        let (s, h) = UNIQUE_STRINGS.lock().unwrap().insert(value);
+        let shard = intern_shard(hash(value.as_str()));
+        let (s, h) = UNIQUE_STRINGS[shard].lock().unwrap().insert(value);
         Self::Store(s, h)
     }
 }
@@ -107,8 +120,8 @@ impl<I: Into<String>> From<I> for UniqueString {
 impl Drop for UniqueString {
     fn drop(&mut self) {
         match self {
-            Self::Store(rc, _hash) => {
-                let lock = UNIQUE_STRINGS.lock();
+            Self::Store(rc, hash) => {
+                let lock = UNIQUE_STRINGS[intern_shard(*hash)].lock();
                 // one instance is inside the storage and second one is inside self
                 if Arc::strong_count(rc) == 2 {
                     lock.unwrap().remove(rc);
@@ -135,12 +148,12 @@ mod test {
         {
             let a = UniqueString::from("unique_string_drop");
             let b = UniqueString::from("unique_string_drop");
-            let count = UNIQUE_STRINGS.lock().unwrap().strings.len();
+            let count: usize = UNIQUE_STRINGS.iter().map(|s| s.lock().unwrap().strings.len()).sum();
             assert_eq!(count, 1);
             black_box(a);
             black_box(b);
         }
-        let count = UNIQUE_STRINGS.lock().unwrap().strings.len();
+        let count: usize = UNIQUE_STRINGS.iter().map(|s| s.lock().unwrap().strings.len()).sum();
         assert_eq!(count, 0);
     }
 
