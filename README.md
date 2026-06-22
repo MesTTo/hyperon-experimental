@@ -21,6 +21,21 @@ If you want to contribute the project please see the [contributing guide](./docs
 If you find troubles with the installation, see the [Troubleshooting](#troubleshooting) section below.
 For development related instructions see the [development guide](./docs/DEVELOPMENT.md).
 
+# This fork: MORK atomspace backend
+
+This is a personal fork (MesTTo) that adds the path for running a Hyperon atomspace on the
+optimized [MORK](https://github.com/MesTTo/MORK) kernel. It keeps Hyperon intact and adds:
+
+- the `mork-demo` examples (conformance, scale, and parallel showcases for the MORK backend,
+  plus point-query and CCD-affinity perf benchmarks),
+- two small API surfaces the backend needs: `next_variable_id` made public for per-result
+  variable hygiene, and a `Grounded::is_mutable` marker so mutable grounded atoms (such as
+  `State`) are stored and matched by identity.
+
+The backend itself lives in [metta-on-mork](https://github.com/MesTTo/metta-on-mork), which
+implements Hyperon's `Space`/`SpaceMut` over MORK. On a Ryzen 9950X a read-only `MorkSnapshot`
+scales point queries to 17.6 million per second across sixteen cores.
+
 # Using the latest release version
 
 It is the most simple way of getting MeTTa interpreter especially if you are a Python developer.
