@@ -23,8 +23,8 @@ For development related instructions see the [development guide](./docs/DEVELOPM
 
 # This fork: MORK atomspace backend
 
-This is a personal fork (MesTTo) that adds the path for running a Hyperon atomspace on the
-optimized [MORK](https://github.com/MesTTo/MORK) kernel. It keeps Hyperon intact and adds:
+This fork adds the path for running a Hyperon atomspace on the optimized
+[MORK](https://github.com/MesTTo/MORK) kernel. It keeps Hyperon intact and adds:
 
 - the `mork-demo` examples (conformance, scale, and parallel showcases for the MORK backend,
   plus point-query and CCD-affinity perf benchmarks),
